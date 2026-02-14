@@ -1,0 +1,2308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Scientific Calculator Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        }
+        
+        /* 3D Calculator Body */
+        .calc-container {
+            perspective: 1200px;
+        }
+        
+        .calc-body {
+            background: linear-gradient(145deg, #3a3a4a 0%, #2a2a3a 30%, #1a1a2a 70%, #0f0f1a 100%);
+            transform-style: preserve-3d;
+            transform: rotateX(5deg) rotateY(0deg);
+            box-shadow: 
+                0 60px 120px rgba(0, 0, 0, 0.6),
+                0 40px 80px rgba(0, 0, 0, 0.5),
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 10px 20px rgba(0, 0, 0, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.15),
+                inset 0 -8px 30px rgba(0, 0, 0, 0.4),
+                inset 2px 0 0 rgba(255, 255, 255, 0.05),
+                inset -2px 0 0 rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+        
+        .calc-body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%);
+            border-radius: 28px 28px 0 0;
+            pointer-events: none;
+        }
+        
+        .calc-body::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 8%;
+            right: 8%;
+            height: 15px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+            border-radius: 0 0 50% 50%;
+            filter: blur(8px);
+        }
+        
+        /* 3D Frame */
+        .calc-frame {
+            position: relative;
+        }
+        
+        .calc-frame::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            background: linear-gradient(145deg, #4a4a5c 0%, #2a2a3c 50%, #1a1a2c 100%);
+            border-radius: 32px;
+            z-index: -1;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        
+        .calc-frame::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            background: linear-gradient(145deg, #5a5a6c 0%, #2a2a3c 100%);
+            border-radius: 36px;
+            z-index: -2;
+        }
+        
+        /* 3D Button Base */
+        .calc-btn {
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            -webkit-user-select: none;
+            transform-style: preserve-3d;
+            position: relative;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .calc-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            border-radius: inherit;
+            background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 100%);
+            pointer-events: none;
+        }
+        
+        .calc-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 10%;
+            right: 10%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            filter: blur(5px);
+            opacity: 0.8;
+            transition: all 0.12s ease;
+        }
+        
+        .calc-btn:hover {
+            transform: translateY(-3px) translateZ(10px) scale(1.02);
+            filter: brightness(1.15) saturate(1.1);
+        }
+        
+        .calc-btn:hover::after {
+            bottom: -6px;
+            opacity: 0.5;
+            filter: blur(6px);
+        }
+        
+        .calc-btn:active, .calc-btn.pressed {
+            transform: translateY(2px) translateZ(-5px) scale(0.97);
+            filter: brightness(0.9);
+        }
+        
+        .calc-btn:active::after, .calc-btn.pressed::after {
+            bottom: 0px;
+            opacity: 0.2;
+            filter: blur(2px);
+        }
+        
+        /* Display styling */
+        .display-area {
+            background: linear-gradient(180deg, #050510 0%, #0a0a1a 50%, #101025 100%);
+            box-shadow: 
+                inset 0 8px 25px rgba(0, 0, 0, 0.6),
+                inset 0 2px 8px rgba(0, 0, 0, 0.4),
+                inset 0 -2px 5px rgba(0, 0, 0, 0.3),
+                0 2px 0 rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(0, 0, 0, 0.6);
+        }
+        
+        .display-text {
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        }
+        
+        @keyframes resultPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes glowPulse {
+            0%, 100% { text-shadow: 0 0 10px currentColor; }
+            50% { text-shadow: 0 0 25px currentColor, 0 0 40px currentColor; }
+        }
+        
+        .result-animate {
+            animation: resultPop 0.3s ease-out, glowPulse 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Colorful 3D Button Categories */
+        
+        /* Number buttons - Dark blue/gray */
+        .btn-number {
+            background: linear-gradient(145deg, #5a6a7a 0%, #4a5a6a 30%, #3a4a5a 70%, #2a3a4a 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 5px 0 #1a2a3a,
+                0 7px 10px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-number:hover {
+            box-shadow: 
+                0 7px 0 #1a2a3a,
+                0 10px 15px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-number:active {
+            box-shadow: 
+                0 2px 0 #1a2a3a,
+                0 3px 6px rgba(0, 0, 0, 0.3),
+                inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Operator buttons - Vibrant Orange */
+        .btn-operator {
+            background: linear-gradient(145deg, #ff8c42 0%, #ff6b2b 30%, #e85a1e 70%, #cc4a15 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 5px 0 #a03810,
+                0 7px 10px rgba(255, 107, 43, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-operator:hover {
+            box-shadow: 
+                0 7px 0 #a03810,
+                0 10px 20px rgba(255, 107, 43, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Function buttons - Teal/Cyan */
+        .btn-function {
+            background: linear-gradient(145deg, #4fd1c5 0%, #38b2ac 30%, #2c9a94 70%, #237a75 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 5px 0 #1a5a56,
+                0 7px 10px rgba(56, 178, 172, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-function:hover {
+            box-shadow: 
+                0 7px 0 #1a5a56,
+                0 10px 20px rgba(56, 178, 172, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Memory buttons - Royal Purple */
+        .btn-memory {
+            background: linear-gradient(145deg, #a78bfa 0%, #8b5cf6 30%, #7c3aed 70%, #6d28d9 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 5px 0 #4c1d95,
+                0 7px 10px rgba(139, 92, 246, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-memory:hover {
+            box-shadow: 
+                0 7px 0 #4c1d95,
+                0 10px 20px rgba(139, 92, 246, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Code/Bitwise buttons - Electric Blue */
+        .btn-code {
+            background: linear-gradient(145deg, #60a5fa 0%, #3b82f6 30%, #2563eb 70%, #1d4ed8 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 5px 0 #1e3a8a,
+                0 7px 10px rgba(59, 130, 246, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-code:hover {
+            box-shadow: 
+                0 7px 0 #1e3a8a,
+                0 10px 20px rgba(59, 130, 246, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Logic buttons - Hot Pink/Magenta */
+        .btn-logic {
+            background: linear-gradient(145deg, #f472b6 0%, #ec4899 30%, #db2777 70%, #be185d 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 5px 0 #831843,
+                0 7px 10px rgba(236, 72, 153, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-logic:hover {
+            box-shadow: 
+                0 7px 0 #831843,
+                0 10px 20px rgba(236, 72, 153, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Comparison buttons - Amber/Gold */
+        .btn-compare {
+            background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 30%, #d97706 70%, #b45309 100%);
+            color: #1a1a1a;
+            box-shadow: 
+                0 5px 0 #78350f,
+                0 7px 10px rgba(245, 158, 11, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        .btn-compare:hover {
+            box-shadow: 
+                0 7px 0 #78350f,
+                0 10px 20px rgba(245, 158, 11, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Equals button - Bright Green */
+        .btn-equals {
+            background: linear-gradient(145deg, #4ade80 0%, #22c55e 30%, #16a34a 70%, #15803d 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 5px 0 #14532d,
+                0 7px 10px rgba(34, 197, 94, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-equals:hover {
+            box-shadow: 
+                0 7px 0 #14532d,
+                0 10px 20px rgba(34, 197, 94, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Clear button - Bright Red */
+        .btn-clear {
+            background: linear-gradient(145deg, #f87171 0%, #ef4444 30%, #dc2626 70%, #b91c1c 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 5px 0 #7f1d1d,
+                0 7px 10px rgba(239, 68, 68, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-clear:hover {
+            box-shadow: 
+                0 7px 0 #7f1d1d,
+                0 10px 20px rgba(239, 68, 68, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Navigation buttons - Gradient Cyan/Purple */
+        .btn-nav {
+            background: linear-gradient(145deg, #06b6d4 0%, #0891b2 30%, #0e7490 70%, #155e75 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 4px 0 #164e63,
+                0 5px 8px rgba(6, 182, 212, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-nav:hover {
+            box-shadow: 
+                0 5px 0 #164e63,
+                0 8px 15px rgba(6, 182, 212, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px) scale(1.03);
+        }
+        
+        .btn-nav:active {
+            box-shadow: 
+                0 2px 0 #164e63,
+                0 3px 5px rgba(6, 182, 212, 0.3),
+                inset 0 2px 5px rgba(0, 0, 0, 0.2);
+            transform: translateY(1px) scale(0.98);
+        }
+        
+        /* Voice button - Gradient Red/Orange */
+        .btn-voice {
+            background: linear-gradient(145deg, #f97316 0%, #ea580c 30%, #c2410c 70%, #9a3412 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 4px 0 #7c2d12,
+                0 5px 8px rgba(249, 115, 22, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-voice:hover {
+            box-shadow: 
+                0 5px 0 #7c2d12,
+                0 8px 15px rgba(249, 115, 22, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        .btn-voice.listening {
+            animation: pulse 1s infinite;
+            background: linear-gradient(145deg, #ef4444 0%, #dc2626 30%, #b91c1c 70%, #991b1b 100%);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 4px 0 #7c2d12, 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 4px 0 #7c2d12, 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        
+        /* Language button */
+        .btn-lang {
+            background: linear-gradient(145deg, #8b5cf6 0%, #7c3aed 30%, #6d28d9 70%, #5b21b6 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 4px 0 #4c1d95,
+                0 5px 8px rgba(139, 92, 246, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-lang:hover {
+            box-shadow: 
+                0 5px 0 #4c1d95,
+                0 8px 15px rgba(139, 92, 246, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        /* History button */
+        .btn-history {
+            background: linear-gradient(145deg, #14b8a6 0%, #0d9488 30%, #0f766e 70%, #115e59 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 4px 0 #134e4a,
+                0 5px 8px rgba(20, 184, 166, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-history:hover {
+            box-shadow: 
+                0 5px 0 #134e4a,
+                0 8px 15px rgba(20, 184, 166, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        .btn-history.active {
+            background: linear-gradient(145deg, #2dd4bf 0%, #14b8a6 30%, #0d9488 70%, #0f766e 100%);
+        }
+        
+        /* History item */
+        .history-item {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .history-item:hover {
+            background: rgba(51, 65, 85, 0.7);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+        
+        /* Cursor blink animation */
+        @keyframes cursorBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .cursor-char {
+            animation: cursorBlink 1s infinite;
+            color: #22d3ee;
+            font-weight: bold;
+        }
+        
+        /* Mode tabs */
+        .mode-tab {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(145deg, #3a3a4a 0%, #2a2a3a 100%);
+            box-shadow: 
+                0 3px 0 #1a1a2a,
+                0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .mode-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            pointer-events: none;
+            border-radius: inherit;
+        }
+        
+        .mode-tab.active {
+            background: linear-gradient(145deg, #ff8c42 0%, #ff6b2b 50%, #e85a1e 100%);
+            color: white;
+            box-shadow: 
+                0 3px 0 #a03810,
+                0 6px 15px rgba(255, 107, 43, 0.5);
+        }
+        
+        /* True/False indicator styling */
+        .bool-true {
+            color: #4ade80;
+            text-shadow: 0 0 15px #22c55e, 0 0 30px #22c55e;
+        }
+        
+        .bool-false {
+            color: #f87171;
+            text-shadow: 0 0 15px #ef4444, 0 0 30px #ef4444;
+        }
+        
+        /* Input display scroll */
+        .input-scroll {
+            overflow-x: auto;
+            scroll-behavior: smooth;
+        }
+        
+        /* Language indicator */
+        .lang-indicator {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(139, 92, 246, 0.3);
+            color: #a78bfa;
+        }
+        
+        /* Voice status */
+        .voice-status {
+            font-size: 10px;
+            color: #f97316;
+            animation: fadeIn 0.3s ease;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-2 sm:p-4">
+    <div class="calc-container w-full max-w-md">
+        <div id="calculator" class="calc-frame">
+            <div class="calc-body w-full rounded-3xl flex flex-col overflow-hidden p-3 sm:p-4">
+                
+                <!-- Display Section -->
+                <div class="display-area p-3 sm:p-4 rounded-2xl mb-2">
+                    <!-- Voice Status & Language -->
+                    <div class="flex justify-between items-center mb-1">
+                        <div id="voiceStatus" class="voice-status"></div>
+                        <div id="langIndicator" class="lang-indicator">🌐 EN</div>
+                    </div>
+                    
+                    <!-- History -->
+                    <div id="history" class="text-slate-400 text-right text-xs sm:text-sm h-5 overflow-hidden display-text truncate"></div>
+                    
+                    <!-- Current Input -->
+                    <div id="input" class="input-scroll text-cyan-400 text-right text-lg sm:text-xl min-h-[1.8rem] sm:min-h-[2rem] display-text whitespace-nowrap py-1 scrollbar-hide" style="text-shadow: 0 0 10px #22d3ee;"></div>
+                    
+                    <!-- Result -->
+                    <div id="result" class="text-right text-2xl sm:text-3xl font-bold text-green-400 min-h-[2rem] sm:min-h-[2.5rem] display-text overflow-x-auto scrollbar-hide whitespace-nowrap" style="text-shadow: 0 0 15px #4ade80;">0</div>
+                    
+                    <!-- Memory & Boolean Indicator -->
+                    <div class="flex justify-between items-center mt-1">
+                        <div id="boolIndicator" class="text-xs display-text font-bold"></div>
+                        <div id="memoryIndicator" class="text-purple-400 text-xs display-text" style="text-shadow: 0 0 8px #a855f7;"></div>
+                    </div>
+                </div>
+                
+                <!-- Mode Tabs + Voice + Language + History Buttons -->
+                <div class="flex px-1 gap-1.5 mb-2">
+                    <button id="sciMode" class="mode-tab active flex-1 py-2 rounded-xl text-xs font-bold text-slate-300" onclick="setMode('scientific')">🔬 Sci</button>
+                    <button id="codeMode" class="mode-tab flex-1 py-2 rounded-xl text-xs font-bold text-slate-300" onclick="setMode('coding')">💻 Code</button>
+                    <button id="historyBtn" class="calc-btn btn-history rounded-xl px-2 py-2 text-xs font-bold" onclick="toggleHistory()" title="History">📜</button>
+                    <button id="langBtn" class="calc-btn btn-lang rounded-xl px-2 py-2 text-xs" onclick="cycleLanguage()" title="Change Language">🌐</button>
+                    <button id="voiceBtn" class="calc-btn btn-voice rounded-xl px-2 py-2 text-xs font-bold" onclick="toggleVoice()" title="Voice Input">🎤 OFF</button>
+                </div>
+                
+                <!-- History Panel (Hidden by default) -->
+                <div id="historyPanel" class="hidden mb-2 mx-1 p-2 rounded-xl bg-slate-900/80 border border-slate-700 max-h-40 overflow-y-auto scrollbar-hide">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-slate-400 font-bold">📜 History</span>
+                        <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded bg-red-900/30">Clear All</button>
+                    </div>
+                    <div id="historyList" class="space-y-1 text-xs"></div>
+                    <div id="noHistory" class="text-center text-slate-500 py-2">No history yet</div>
+                </div>
+                
+                <!-- Navigation + Control Row -->
+                <div class="grid grid-cols-8 gap-1.5 mb-2 px-1">
+                    <button class="calc-btn btn-nav rounded-lg py-2 text-sm" onclick="moveCursor('start')" title="Start">⏮</button>
+                    <button class="calc-btn btn-nav rounded-lg py-2 text-sm" onclick="moveCursor('left')" title="Left">◀</button>
+                    <button class="calc-btn btn-nav rounded-lg py-2 text-sm" onclick="moveCursor('up')" title="Jump Back">▲</button>
+                    <button class="calc-btn btn-nav rounded-lg py-2 text-sm" onclick="moveCursor('down')" title="Jump Forward">▼</button>
+                    <button class="calc-btn btn-nav rounded-lg py-2 text-sm" onclick="moveCursor('right')" title="Right">▶</button>
+                    <button class="calc-btn btn-nav rounded-lg py-2 text-sm" onclick="moveCursor('end')" title="End">⏭</button>
+                    <button class="calc-btn btn-clear rounded-lg py-2 text-xs" onclick="deleteForward()" title="Delete">DEL</button>
+                    <button class="calc-btn btn-function rounded-lg py-2 text-xs" onclick="backspace()" title="Backspace">⌫</button>
+                </div>
+                
+                <!-- Buttons Container -->
+                <div class="flex-1 flex flex-col gap-1.5 overflow-hidden px-1">
+                    
+                    <!-- Scientific Mode Buttons -->
+                    <div id="scientificPanel" class="flex-1 flex flex-col gap-1.5">
+                        <!-- Memory Row -->
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button class="calc-btn btn-memory rounded-xl py-2.5 text-xs" onclick="memoryAdd()">M+</button>
+                            <button class="calc-btn btn-memory rounded-xl py-2.5 text-xs" onclick="memorySub()">M-</button>
+                            <button class="calc-btn btn-memory rounded-xl py-2.5 text-xs" onclick="memoryRecall()">MR</button>
+                            <button class="calc-btn btn-memory rounded-xl py-2.5 text-xs" onclick="memoryClear()">MC</button>
+                        </div>
+                        
+                        <!-- Scientific Functions Row 1 -->
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-xs" onclick="appendFunction('sin(')">sin</button>
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-xs" onclick="appendFunction('cos(')">cos</button>
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-xs" onclick="appendFunction('tan(')">tan</button>
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-xs" onclick="appendFunction('log(')">log</button>
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-xs" onclick="appendFunction('ln(')">ln</button>
+                        </div>
+                        
+                        <!-- Scientific Functions Row 2 -->
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-xs" onclick="appendFunction('√(')">√</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2.5 text-xs" onclick="append('^')">x^y</button>
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-xs" onclick="appendFunction('fact(')">n!</button>
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-xs" onclick="append('(')">(</button>
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-xs" onclick="append(')')">)</button>
+                        </div>
+                        
+                        <!-- Main Calculator Grid -->
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button class="calc-btn btn-clear rounded-xl py-2.5 text-sm" onclick="clearAll()">AC</button>
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-sm" onclick="toggleSign()">±</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2.5 text-sm" onclick="append('%')">%</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2.5 text-lg" onclick="append('÷')">÷</button>
+                            
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('7')">7</button>
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('8')">8</button>
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('9')">9</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2.5 text-lg" onclick="append('×')">×</button>
+                            
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('4')">4</button>
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('5')">5</button>
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('6')">6</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2.5 text-lg" onclick="append('-')">−</button>
+                            
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('1')">1</button>
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('2')">2</button>
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('3')">3</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2.5 text-lg" onclick="append('+')">+</button>
+                            
+                            <button class="calc-btn btn-function rounded-xl py-2.5 text-sm" onclick="append('π')">π</button>
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('0')">0</button>
+                            <button class="calc-btn btn-number rounded-xl py-2.5 text-lg" onclick="append('.')">.</button>
+                            <button class="calc-btn btn-equals rounded-xl py-2.5 text-lg" onclick="calculate()">=</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Coding Mode Buttons -->
+                    <div id="codingPanel" class="hidden flex-1 flex flex-col gap-1.5">
+                        <!-- Bitwise Operators Row -->
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button class="calc-btn btn-code rounded-xl py-2 text-xs" onclick="append('&')" title="Bitwise AND">AND &</button>
+                            <button class="calc-btn btn-code rounded-xl py-2 text-xs" onclick="append('|')" title="Bitwise OR">OR |</button>
+                            <button class="calc-btn btn-code rounded-xl py-2 text-xs" onclick="append(' XOR ')" title="Bitwise XOR">XOR</button>
+                            <button class="calc-btn btn-code rounded-xl py-2 text-xs" onclick="bitwiseNot()" title="Bitwise NOT">NOT ~</button>
+                        </div>
+                        
+                        <!-- Shift & Power Operators -->
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button class="calc-btn btn-code rounded-xl py-2 text-xs" onclick="append('<<')" title="Left Shift"><<</button>
+                            <button class="calc-btn btn-code rounded-xl py-2 text-xs" onclick="append('>>')" title="Right Shift">>></button>
+                            <button class="calc-btn btn-operator rounded-xl py-2 text-xs" onclick="append('**')" title="Power">**</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2 text-xs" onclick="append('//')" title="Floor Division">//</button>
+                        </div>
+                        
+                        <!-- Logic Operators -->
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button class="calc-btn btn-logic rounded-xl py-2 text-xs" onclick="append('&&')" title="Logical AND">&& AND</button>
+                            <button class="calc-btn btn-logic rounded-xl py-2 text-xs" onclick="append('||')" title="Logical OR">|| OR</button>
+                            <button class="calc-btn btn-logic rounded-xl py-2 text-xs" onclick="appendLogic('true')">true</button>
+                            <button class="calc-btn btn-logic rounded-xl py-2 text-xs" onclick="appendLogic('false')">false</button>
+                        </div>
+                        
+                        <!-- Comparison Operators -->
+                        <div class="grid grid-cols-6 gap-1">
+                            <button class="calc-btn btn-compare rounded-xl py-2 text-xs" onclick="append('==')">==</button>
+                            <button class="calc-btn btn-compare rounded-xl py-2 text-xs" onclick="append('!=')">!=</button>
+                            <button class="calc-btn btn-compare rounded-xl py-2 text-xs" onclick="append('>')">></button>
+                            <button class="calc-btn btn-compare rounded-xl py-2 text-xs" onclick="append('<')"><</button>
+                            <button class="calc-btn btn-compare rounded-xl py-2 text-xs" onclick="append('>=')">>=</button>
+                            <button class="calc-btn btn-compare rounded-xl py-2 text-xs" onclick="append('<=')"><=</button>
+                        </div>
+                        
+                        <!-- Main Calculator Grid (Coding) -->
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button class="calc-btn btn-clear rounded-xl py-2 text-sm" onclick="clearAll()">AC</button>
+                            <button class="calc-btn btn-function rounded-xl py-2 text-sm" onclick="append('(')">(</button>
+                            <button class="calc-btn btn-function rounded-xl py-2 text-sm" onclick="append(')')">)</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2 text-lg" onclick="append('÷')">÷</button>
+                            
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('7')">7</button>
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('8')">8</button>
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('9')">9</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2 text-lg" onclick="append('×')">×</button>
+                            
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('4')">4</button>
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('5')">5</button>
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('6')">6</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2 text-lg" onclick="append('-')">−</button>
+                            
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('1')">1</button>
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('2')">2</button>
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('3')">3</button>
+                            <button class="calc-btn btn-operator rounded-xl py-2 text-lg" onclick="append('+')">+</button>
+                            
+                            <button class="calc-btn btn-operator rounded-xl py-2 text-sm" onclick="append('%')">%</button>
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('0')">0</button>
+                            <button class="calc-btn btn-number rounded-xl py-2 text-lg" onclick="append('.')">.</button>
+                            <button class="calc-btn btn-equals rounded-xl py-2 text-lg" onclick="calculate()">=</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Calculator State
+        let currentInput = '';
+        let previousInput = '';
+        let memory = 0;
+        let justCalculated = false;
+        let currentMode = 'scientific';
+        let lastResultWasBoolean = false;
+        let cursorPosition = 0;
+        let isListening = false;
+        let recognition = null;
+        let calculationHistory = [];
+        let showingHistory = false;
+        
+        // Language settings
+        const languages = [
+            { code: 'te-IN', name: 'TE', flag: '🇮🇳', label: 'తెలుగు' },
+            { code: 'hi-IN', name: 'HI', flag: '🇮🇳', label: 'हिंदी' },
+            { code: 'ur-PK', name: 'UR', flag: '🇵🇰', label: 'اردو' },
+            { code: 'en-US', name: 'EN', flag: '🇺🇸', label: 'English' }
+        ];
+        let currentLangIndex = 0;
+
+        // DOM Elements
+        const inputDisplay = document.getElementById('input');
+        const resultDisplay = document.getElementById('result');
+        const historyDisplay = document.getElementById('history');
+        const memoryIndicator = document.getElementById('memoryIndicator');
+        const boolIndicator = document.getElementById('boolIndicator');
+        const scientificPanel = document.getElementById('scientificPanel');
+        const codingPanel = document.getElementById('codingPanel');
+        const sciModeBtn = document.getElementById('sciMode');
+        const codeModeBtn = document.getElementById('codeMode');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const langIndicator = document.getElementById('langIndicator');
+        const voiceStatus = document.getElementById('voiceStatus');
+        const historyPanel = document.getElementById('historyPanel');
+        const historyBtn = document.getElementById('historyBtn');
+
+        // Initialize Speech Recognition
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;  // Keep listening for full sentence
+                recognition.interimResults = true;
+                recognition.maxAlternatives = 5; // More alternatives for better accuracy
+                recognition.lang = languages[currentLangIndex].code;
+                
+                let fullSessionText = '';
+                let lastProcessedText = '';
+                
+                recognition.onstart = () => {
+                    fullSessionText = '';
+                    lastProcessedText = '';
+                    voiceStatus.textContent = '🔴 Listening - ' + languages[currentLangIndex].label;
+                    voiceBtn.innerHTML = '🎤 ON';
+                    console.log('🎤 Voice started - Language:', languages[currentLangIndex].label);
+                };
+                
+                recognition.onresult = (event) => {
+                    let interimText = '';
+                    let finalText = '';
+                    
+                    // Collect all results
+                    for (let i = 0; i < event.results.length; i++) {
+                        const result = event.results[i];
+                        
+                        // Get the best transcript (prefer one with digits)
+                        let bestTranscript = result[0].transcript;
+                        let bestConfidence = result[0].confidence || 0;
+                        
+                        for (let j = 1; j < result.length; j++) {
+                            const alt = result[j];
+                            // Prefer alternatives with digits or higher confidence
+                            if (/\d/.test(alt.transcript) && !/\d/.test(bestTranscript)) {
+                                bestTranscript = alt.transcript;
+                                bestConfidence = alt.confidence || 0;
+                            } else if ((alt.confidence || 0) > bestConfidence) {
+                                bestTranscript = alt.transcript;
+                                bestConfidence = alt.confidence || 0;
+                            }
+                        }
+                        
+                        if (result.isFinal) {
+                            finalText += bestTranscript + ' ';
+                        } else {
+                            interimText += bestTranscript + ' ';
+                        }
+                    }
+                    
+                    // Combine final and interim for display
+                    const displayText = (finalText + interimText).trim();
+                    
+                    if (displayText !== lastProcessedText && displayText.length > 0) {
+                        lastProcessedText = displayText;
+                        fullSessionText = displayText;
+                        
+                        console.log('🎤 Raw speech:', displayText);
+                        
+                        // Convert immediately
+                        const converted = quickConvert(displayText);
+                        
+                        if (converted.length > 0) {
+                            console.log('📊 Converted to:', converted);
+                            voiceStatus.textContent = '🎧 ' + converted;
+                            currentInput = converted;
+                            cursorPosition = currentInput.length;
+                            updateDisplay();
+                            liveCalculate(); // Show result immediately!
+                            
+                            // Check if expression looks complete (has number, operator, number)
+                            const hasCompleteExpression = /\d+[+\-×÷%]\d+/.test(converted);
+                            
+                            // Auto-stop after 1.5 seconds when complete expression is detected
+                            if (hasCompleteExpression) {
+                                console.log('🎯 Complete expression: ' + converted + ' = ' + resultDisplay.textContent);
+                                voiceStatus.textContent = '✅ ' + converted + ' = ' + resultDisplay.textContent;
+                                
+                                // Auto-stop mic after detecting complete expression
+                                setTimeout(() => {
+                                    if (isListening && recognition) {
+                                        console.log('🛑 Auto-stopping mic...');
+                                        try { 
+                                            recognition.stop(); 
+                                        } catch(e) {}
+                                    }
+                                }, 1200); // 1.2 second delay to allow for more input
+                            }
+                        } else {
+                            // Show what was heard (truncated)
+                            voiceStatus.textContent = '🔴 ' + displayText.substring(0, 25) + '...';
+                        }
+                    }
+                };
+                
+                recognition.onend = () => {
+                    console.log('🎤 Voice ended. Full session:', fullSessionText);
+                    
+                    // Do final calculation if we have input
+                    if (currentInput.length > 0) {
+                        calculate(); // Final calculation with animation
+                    }
+                    
+                    // Turn off mic UI
+                    isListening = false;
+                    voiceBtn.classList.remove('listening');
+                    voiceBtn.innerHTML = '🎤 OFF';
+                    voiceBtn.style.background = '';
+                    
+                    // Show done message
+                    voiceStatus.textContent = '✅ Done! Click 🎤 for new';
+                    setTimeout(() => { voiceStatus.textContent = ''; }, 2500);
+                };
+                
+                recognition.onerror = (event) => {
+                    console.log('Speech error:', event.error);
+                    if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                        voiceStatus.textContent = '❌ ' + event.error;
+                    }
+                    isListening = false;
+                    voiceBtn.classList.remove('listening');
+                    voiceBtn.innerHTML = '🎤 OFF';
+                    voiceBtn.style.background = '';
+                    setTimeout(() => { voiceStatus.textContent = ''; }, 2000);
+                };
+            }
+        }
+
+        // Cycle through languages
+        function cycleLanguage() {
+            currentLangIndex = (currentLangIndex + 1) % languages.length;
+            const lang = languages[currentLangIndex];
+            langIndicator.textContent = lang.flag + ' ' + lang.name;
+            langIndicator.title = lang.label;
+            
+            if (recognition) {
+                recognition.lang = lang.code;
+            }
+            
+            // Show feedback
+            voiceStatus.textContent = '🌐 ' + lang.label;
+            setTimeout(() => { voiceStatus.textContent = ''; }, 1500);
+        }
+
+        // Quick convert for preview display - handles natural speech in all 4 languages
+        function quickConvert(text) {
+            let t = text.toLowerCase().trim();
+            
+            console.log('🎤 quickConvert input:', t);
+            
+            // ===== STEP 0: HANDLE "EQUALS" COMMANDS - REMOVE THEM =====
+            t = t.replace(/equals|equal to|equal|बराबर|సమానం|برابر|ఎంత|जवाब|جواب|result|answer/gi, ' ');
+            
+            // ===== STEP 0.5: PRESERVE DIGITS FIRST =====
+            // Extract all existing digits and their positions
+            let digitMatches = t.match(/\d+/g) || [];
+            console.log('📊 Found digits:', digitMatches);
+            
+            // ===== STEP 1: NATURAL CONVERSATIONAL PHRASES =====
+            
+            // Telugu natural phrases (how normal people talk)
+            t = t.replace(/లో\s*నుంచి/gi, ' - ');        // "lo nunchi" = subtract from
+            t = t.replace(/లో\s*నుండి/gi, ' - ');        // "lo nundi" = subtract from  
+            t = t.replace(/నుంచి/gi, ' - ');              // "nunchi" = from (subtract)
+            t = t.replace(/నుండి/gi, ' - ');              // "nundi" = from (subtract)
+            t = t.replace(/తీసేయ్/gi, ' - ');             // "tesey" = remove
+            t = t.replace(/తీసెయ్/gi, ' - ');             // "tesey" = remove
+            t = t.replace(/తీసేయండి/gi, ' - ');          // "teseyandi" = please remove
+            t = t.replace(/తీయండి/gi, ' - ');            // "teeyandi" = please remove
+            t = t.replace(/తీసేద్దాం/gi, ' - ');          // "teseddam" = let's remove
+            t = t.replace(/తీసేస్తే/gi, ' - ');           // "teseste" = if we remove
+            t = t.replace(/తీస్తే/gi, ' - ');             // "teste" = if removed
+            t = t.replace(/తీసేయి/gi, ' - ');             // "teseyi" = remove it
+            t = t.replace(/తీయి/gi, ' - ');               // "teeyi" = remove
+            t = t.replace(/కి\s*యాడ్/gi, ' + ');          // "ki add" = add to
+            t = t.replace(/కి\s*కలుపు/gi, ' + ');         // "ki kalupu" = add to
+            t = t.replace(/కి\s*కలిపితే/gi, ' + ');       // "ki kalipite" = if we add
+            t = t.replace(/కి\s*కలిపి/gi, ' + ');         // "ki kalipi" = adding to
+            t = t.replace(/కలిపితే/gi, ' + ');            // "kalipite" = if we add
+            t = t.replace(/కలుపు/gi, ' + ');              // "kalupu" = add
+            t = t.replace(/కలిపి/gi, ' + ');              // "kalipi" = adding
+            t = t.replace(/యాడ్\s*చేయి/gi, ' + ');        // "add cheyi" = do add
+            t = t.replace(/యాడ్\s*చేస్తే/gi, ' + ');      // "add cheste" = if we add
+            t = t.replace(/యాడ్/gi, ' + ');               // "add" 
+            t = t.replace(/add\s*chey/gi, ' + ');         // "add chey" romanized
+            t = t.replace(/add\s*cheyi/gi, ' + ');        // "add cheyi" romanized
+            t = t.replace(/divided\s*by/gi, ' ÷ ');       // divided by
+            t = t.replace(/divide\s*by/gi, ' ÷ ');        // divide by
+            t = t.replace(/భాగించు/gi, ' ÷ ');           // "bhaginchu" = divide
+            t = t.replace(/భాగిస్తే/gi, ' ÷ ');           // "bhagiste" = if divided
+            t = t.replace(/గుణించు/gi, ' × ');           // "guninchu" = multiply
+            t = t.replace(/గుణిస్తే/gi, ' × ');           // "guniste" = if multiplied
+            t = t.replace(/సార్లు/gi, ' × ');             // "saarlu" = times
+            t = t.replace(/రెట్లు/gi, ' × ');             // "retlu" = times
+            t = t.replace(/మైనస్/gi, ' - ');              // "minus"
+            t = t.replace(/ప్లస్/gi, ' + ');               // "plus"
+            
+            // Hindi natural phrases (how normal people talk)
+            t = t.replace(/में\s*से/gi, ' - ');           // "mein se" = from (subtract)
+            t = t.replace(/मे\s*से/gi, ' - ');            // "me se" = from (subtract)
+            t = t.replace(/से\s*निकालो/gi, ' - ');        // "se nikalo" = remove from
+            t = t.replace(/से\s*निकाल/gi, ' - ');         // "se nikal" = remove from
+            t = t.replace(/से\s*घटाओ/gi, ' - ');          // "se ghatao" = subtract from
+            t = t.replace(/से\s*कम/gi, ' - ');            // "se kam" = less from
+            t = t.replace(/निकालो/gi, ' - ');             // "nikalo" = remove
+            t = t.replace(/निकाल\s*दो/gi, ' - ');         // "nikal do" = remove
+            t = t.replace(/निकालना/gi, ' - ');            // "nikalna" = to remove
+            t = t.replace(/निकाल/gi, ' - ');              // "nikal" = remove
+            t = t.replace(/घटाओ/gi, ' - ');               // "ghatao" = subtract
+            t = t.replace(/घटा\s*दो/gi, ' - ');           // "ghata do" = subtract
+            t = t.replace(/घटाना/gi, ' - ');              // "ghatana" = to subtract
+            t = t.replace(/घटा/gi, ' - ');                // "ghata" = subtract
+            t = t.replace(/हटाओ/gi, ' - ');               // "hatao" = remove
+            t = t.replace(/कम\s*करो/gi, ' - ');           // "kam karo" = reduce
+            t = t.replace(/में\s*जोड़ो/gi, ' + ');         // "mein jodo" = add to
+            t = t.replace(/में\s*जोड़/gi, ' + ');          // "mein jod" = add to
+            t = t.replace(/को\s*जोड़ो/gi, ' + ');          // "ko jodo" = add to
+            t = t.replace(/जोड़\s*दो/gi, ' + ');           // "jod do" = add
+            t = t.replace(/जोड़ो/gi, ' + ');               // "jodo" = add
+            t = t.replace(/जोड़/gi, ' + ');                // "jod" = add
+            t = t.replace(/मिलाओ/gi, ' + ');              // "milao" = add/mix
+            t = t.replace(/और\s*जोड़/gi, ' + ');           // "aur jod" = and add
+            t = t.replace(/प्लस/gi, ' + ');               // "plus"
+            t = t.replace(/माइनस/gi, ' - ');              // "minus"
+            t = t.replace(/गुणा/gi, ' × ');               // "guna" = multiply
+            t = t.replace(/गुना/gi, ' × ');               // "guna" = times
+            t = t.replace(/का\s*गुणा/gi, ' × ');          // "ka guna" = multiply with
+            t = t.replace(/बटा/gi, ' ÷ ');                // "bata" = divide
+            t = t.replace(/भाग/gi, ' ÷ ');                // "bhaag" = divide
+            t = t.replace(/से\s*भाग/gi, ' ÷ ');           // "se bhaag" = divide by
+            
+            // Urdu natural phrases
+            t = t.replace(/میں\s*سے/gi, ' - ');           // "mein se" = from
+            t = t.replace(/سے\s*نکالو/gi, ' - ');         // "se nikalo" = remove from
+            t = t.replace(/نکالو/gi, ' - ');              // "nikalo" = remove
+            t = t.replace(/نکال\s*دو/gi, ' - ');          // "nikal do" = remove
+            t = t.replace(/گھٹاؤ/gi, ' - ');              // "ghatao" = subtract
+            t = t.replace(/گھٹا/gi, ' - ');               // "ghata" = subtract
+            t = t.replace(/کم\s*کرو/gi, ' - ');           // "kam karo" = reduce
+            t = t.replace(/منفی/gi, ' - ');               // "manfi" = minus/negative
+            t = t.replace(/مائنس/gi, ' - ');              // "minus"
+            t = t.replace(/میں\s*جوڑو/gi, ' + ');         // "mein jodo" = add to
+            t = t.replace(/جوڑ\s*دو/gi, ' + ');           // "jod do" = add
+            t = t.replace(/جوڑو/gi, ' + ');               // "jodo" = add
+            t = t.replace(/جمع/gi, ' + ');                // "jama" = add
+            t = t.replace(/پلس/gi, ' + ');                // "plus"
+            t = t.replace(/ضرب/gi, ' × ');                // "zarb" = multiply
+            t = t.replace(/گنا/gi, ' × ');                // "guna" = times
+            t = t.replace(/تقسیم/gi, ' ÷ ');              // "taqseem" = divide
+            t = t.replace(/بٹا/gi, ' ÷ ');                // "bata" = divide
+            
+            // English natural phrases
+            t = t.replace(/\btake\s*away\b/gi, ' - ');    // "take away"
+            t = t.replace(/\bsubtract\b/gi, ' - ');       // "subtract"
+            t = t.replace(/\bminus\b/gi, ' - ');          // "minus"
+            t = t.replace(/\bless\b/gi, ' - ');           // "less"
+            t = t.replace(/\bremove\b/gi, ' - ');         // "remove"
+            t = t.replace(/\bplus\b/gi, ' + ');           // "plus"
+            t = t.replace(/\badd\b/gi, ' + ');            // "add"
+            t = t.replace(/\band\b/gi, ' + ');            // "and"
+            t = t.replace(/\btimes\b/gi, ' × ');          // "times"
+            t = t.replace(/\bmultiply\b/gi, ' × ');       // "multiply"
+            t = t.replace(/\bmultiplied\s*by\b/gi, ' × ');// "multiplied by"
+            t = t.replace(/\binto\b/gi, ' × ');           // "into"
+            t = t.replace(/\bdivided\s*by\b/gi, ' ÷ ');   // "divided by"
+            t = t.replace(/\bdivide\s*by\b/gi, ' ÷ ');    // "divide by"
+            t = t.replace(/\bdivide\b/gi, ' ÷ ');         // "divide"
+            t = t.replace(/\bover\b/gi, ' ÷ ');           // "over"
+            t = t.replace(/\bby\b/gi, ' ÷ ');             // "by" (when alone usually means divide)
+            
+            console.log('🔧 After phrase conversion:', t);
+            
+            // ===== STEP 2: CONVERT SPOKEN NUMBER WORDS TO DIGITS =====
+            
+            // Telugu numbers
+            const teluguNumbers = {
+                'సున్న': '0', 'ఒకటి': '1', 'రెండు': '2', 'మూడు': '3', 'నాలుగు': '4',
+                'ఐదు': '5', 'ఆరు': '6', 'ఏడు': '7', 'యేడు': '7', 'ఎనిమిది': '8', 
+                'తొమ్మిది': '9', 'పది': '10', 'పదకొండు': '11', 'పన్నెండు': '12',
+                'పదమూడు': '13', 'పద్నాలుగు': '14', 'పదిహేను': '15', 'పదహారు': '16',
+                'పదిహేడు': '17', 'పద్దెనిమిది': '18', 'పందొమ్మిది': '19', 'ఇరవై': '20',
+                'ముప్పై': '30', 'నలభై': '40', 'యాభై': '50', 'అరవై': '60',
+                'డెబ్బై': '70', 'ఎనభై': '80', 'తొంభై': '90', 'వంద': '100',
+                'వెయ్యి': '1000', 'లక్ష': '100000'
+            };
+            
+            // Hindi numbers
+            const hindiNumbers = {
+                'शून्य': '0', 'एक': '1', 'दो': '2', 'तीन': '3', 'चार': '4',
+                'पांच': '5', 'पाँच': '5', 'छह': '6', 'छे': '6', 'सात': '7', 
+                'आठ': '8', 'नौ': '9', 'दस': '10', 'ग्यारह': '11', 'बारह': '12',
+                'तेरह': '13', 'चौदह': '14', 'पंद्रह': '15', 'पन्द्रह': '15', 
+                'सोलह': '16', 'सत्रह': '17', 'अठारह': '18', 'उन्नीस': '19',
+                'बीस': '20', 'तीस': '30', 'चालीस': '40', 'पचास': '50',
+                'साठ': '60', 'सत्तर': '70', 'अस्सी': '80', 'नब्बे': '90',
+                'सौ': '100', 'हजार': '1000', 'हज़ार': '1000', 'लाख': '100000'
+            };
+            
+            // Urdu numbers
+            const urduNumbers = {
+                'صفر': '0', 'ایک': '1', 'دو': '2', 'تین': '3', 'چار': '4',
+                'پانچ': '5', 'چھ': '6', 'سات': '7', 'آٹھ': '8', 'نو': '9',
+                'دس': '10', 'گیارہ': '11', 'بارہ': '12', 'تیرہ': '13',
+                'چودہ': '14', 'پندرہ': '15', 'سولہ': '16', 'سترہ': '17',
+                'اٹھارہ': '18', 'انیس': '19', 'بیس': '20', 'تیس': '30',
+                'چالیس': '40', 'پچاس': '50', 'ساٹھ': '60', 'ستر': '70',
+                'اسی': '80', 'نوے': '90', 'سو': '100', 'ہزار': '1000', 'لاکھ': '100000'
+            };
+            
+            // English numbers
+            const englishNumbers = {
+                'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+                'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+                'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+                'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
+                'eighteen': '18', 'nineteen': '19', 'twenty': '20', 'thirty': '30',
+                'forty': '40', 'fifty': '50', 'sixty': '60', 'seventy': '70',
+                'eighty': '80', 'ninety': '90', 'hundred': '100', 'thousand': '1000',
+                'lakh': '100000', 'million': '1000000'
+            };
+            
+            // Apply all number conversions
+            for (let [word, num] of Object.entries(teluguNumbers)) {
+                t = t.replace(new RegExp(word, 'gi'), ' ' + num + ' ');
+            }
+            for (let [word, num] of Object.entries(hindiNumbers)) {
+                t = t.replace(new RegExp(word, 'gi'), ' ' + num + ' ');
+            }
+            for (let [word, num] of Object.entries(urduNumbers)) {
+                t = t.replace(new RegExp(word, 'gi'), ' ' + num + ' ');
+            }
+            for (let [word, num] of Object.entries(englishNumbers)) {
+                t = t.replace(new RegExp('\\b' + word + '\\b', 'gi'), ' ' + num + ' ');
+            }
+            
+            console.log('🔢 After number conversion:', t);
+            
+            // ===== STEP 3: REMOVE FILLER WORDS =====
+            const fillerWords = [
+                // Telugu fillers
+                'లో', 'కి', 'ని', 'ను', 'తో', 'అయితే', 'అంటే', 'చేయి', 'చేస్తే', 'చెప్పు', 'ఎంత', 'ఏమి',
+                // Hindi fillers  
+                'को', 'का', 'की', 'के', 'है', 'हैं', 'था', 'थी', 'थे', 'होगा', 'होगी', 'करो', 'करें', 'कितना', 'क्या', 'बताओ', 'बोलो',
+                // Urdu fillers
+                'کو', 'کا', 'کی', 'کے', 'ہے', 'ہیں', 'تھا', 'تھی', 'تھے', 'ہوگا', 'ہوگی', 'کرو', 'کتنا', 'کیا', 'بتاؤ',
+                // English fillers
+                'is', 'are', 'was', 'were', 'the', 'a', 'an', 'of', 'from', 'to', 'what', 'how', 'much', 'please', 'tell', 'me', 'give', 'answer', 'result', 'equal', 'equals', 'equal to'
+            ];
+            
+            for (let filler of fillerWords) {
+                t = t.replace(new RegExp('\\b' + filler + '\\b', 'gi'), ' ');
+                t = t.replace(new RegExp(filler, 'gi'), ' ');
+            }
+            
+            console.log('🧹 After removing fillers:', t);
+            
+            // ===== STEP 4: EXTRACT ONLY NUMBERS AND OPERATORS =====
+            
+            // Normalize spaces
+            t = t.replace(/\s+/g, ' ').trim();
+            
+            // Extract only valid math characters
+            let result = '';
+            let lastWasOperator = true;
+            
+            for (let i = 0; i < t.length; i++) {
+                const char = t[i];
+                
+                if (/[0-9]/.test(char)) {
+                    result += char;
+                    lastWasOperator = false;
+                } else if (/[+\-×÷%^().]/.test(char)) {
+                    if (!lastWasOperator || char === '(' || char === ')') {
+                        result += char;
+                    }
+                    lastWasOperator = (char !== ')');
+                } else if (char === ' ' && !lastWasOperator) {
+                    // Space after a number - might be followed by operator
+                    continue;
+                }
+            }
+            
+            // Clean up operators
+            result = result.replace(/--/g, '+');
+            result = result.replace(/\+-/g, '-');
+            result = result.replace(/-\+/g, '-');
+            result = result.replace(/\+\+/g, '+');
+            result = result.replace(/××/g, '×');
+            result = result.replace(/÷÷/g, '÷');
+            
+            // Remove trailing operator
+            result = result.replace(/[+\-×÷]$/, '');
+            
+            console.log('✅ Final result:', result);
+            return result;
+        }
+
+        // Process voice input with multi-language support
+        function processVoiceInput(text) {
+            // Use the improved quickConvert function
+            const result = quickConvert(text);
+            
+            if (result.length > 0) {
+                currentInput = result;
+                cursorPosition = currentInput.length;
+                justCalculated = false;
+                updateDisplay();
+                calculate();
+            }
+            return;
+            
+            // OLD CODE BELOW - kept for reference but not used
+            console.log('Original voice input:', text);
+            let processed = text.toLowerCase().trim();
+            
+            // Handle clear command in all languages FIRST
+            if (processed.includes('clear') || processed.includes('साफ') || processed.includes('క్లియర్') || 
+                processed.includes('मिटा') || processed.includes('తుడిచివేయి') || processed.includes('صاف') ||
+                processed.includes('reset') || processed.includes('రీసెట్') || processed.includes('ری سیٹ') ||
+                processed.includes('క్లియర్') || processed.includes('క్లియ') || processed.includes('కట్')) {
+                clearAll();
+                voiceStatus.textContent = '🗑️ Cleared!';
+                return;
+            }
+            
+            // Handle equals command in all languages
+            if (processed.endsWith('बराबर') || processed.endsWith('సమానం') || processed.endsWith('equals') || 
+                processed.endsWith('equal') || processed.endsWith('ఎంత') || processed.endsWith('result') ||
+                processed.endsWith('answer') || processed.endsWith('جواب') || processed.endsWith('برابر') ||
+                processed.endsWith('जवाब') || processed.endsWith('సమాధానం') || processed.endsWith('نتیجہ')) {
+                // Remove the equals word and process the rest first
+                processed = processed
+                    .replace(/బరాబర్$/, '')
+                    .replace(/సమానం$/, '')
+                    .replace(/equals$/, '')
+                    .replace(/equal$/, '')
+                    .replace(/ఎంత$/, '')
+                    .replace(/बराबर$/, '')
+                    .replace(/जवाब$/, '')
+                    .replace(/برابر$/, '')
+                    .replace(/جواب$/, '')
+                    .replace(/نتیجہ$/, '');
+            }
+            
+            // ========== STEP 1: CONVERT OPERATORS FIRST (before numbers to avoid conflicts) ==========
+            
+            // MINUS - All languages
+            processed = processed.replace(/మైనస్/g, ' MINUS ');
+            processed = processed.replace(/తీసివేయండి/g, ' MINUS ');
+            processed = processed.replace(/తీసివేత/g, ' MINUS ');
+            processed = processed.replace(/తీసేయి/g, ' MINUS ');
+            processed = processed.replace(/తీయండి/g, ' MINUS ');
+            processed = processed.replace(/తీయి/g, ' MINUS ');
+            processed = processed.replace(/निकालना/g, ' MINUS ');
+            processed = processed.replace(/निकालो/g, ' MINUS ');
+            processed = processed.replace(/निकाल/g, ' MINUS ');
+            processed = processed.replace(/घटाना/g, ' MINUS ');
+            processed = processed.replace(/घटाओ/g, ' MINUS ');
+            processed = processed.replace(/घटा/g, ' MINUS ');
+            processed = processed.replace(/माइनस/g, ' MINUS ');
+            processed = processed.replace(/منفی/g, ' MINUS ');
+            processed = processed.replace(/مائنس/g, ' MINUS ');
+            processed = processed.replace(/گھٹا/g, ' MINUS ');
+            processed = processed.replace(/نکالو/g, ' MINUS ');
+            processed = processed.replace(/\bminus\b/gi, ' MINUS ');
+            processed = processed.replace(/\bsubtract\b/gi, ' MINUS ');
+            processed = processed.replace(/\bless\b/gi, ' MINUS ');
+            
+            // PLUS - All languages
+            processed = processed.replace(/కూడిక/g, ' PLUS ');
+            processed = processed.replace(/ప్లస్/g, ' PLUS ');
+            processed = processed.replace(/కలుపు/g, ' PLUS ');
+            processed = processed.replace(/కలపండి/g, ' PLUS ');
+            processed = processed.replace(/జోడించు/g, ' PLUS ');
+            processed = processed.replace(/जोड़ना/g, ' PLUS ');
+            processed = processed.replace(/जोड़ो/g, ' PLUS ');
+            processed = processed.replace(/जोड़/g, ' PLUS ');
+            processed = processed.replace(/प्लस/g, ' PLUS ');
+            processed = processed.replace(/जमा/g, ' PLUS ');
+            processed = processed.replace(/جمع/g, ' PLUS ');
+            processed = processed.replace(/پلس/g, ' PLUS ');
+            processed = processed.replace(/\bplus\b/gi, ' PLUS ');
+            processed = processed.replace(/\badd\b/gi, ' PLUS ');
+            
+            // MULTIPLY - All languages
+            processed = processed.replace(/గుణకారం/g, ' MULTIPLY ');
+            processed = processed.replace(/గుణించు/g, ' MULTIPLY ');
+            processed = processed.replace(/గుణించండి/g, ' MULTIPLY ');
+            processed = processed.replace(/ఇన్టు/g, ' MULTIPLY ');
+            processed = processed.replace(/సార్లు/g, ' MULTIPLY ');
+            processed = processed.replace(/गुणा/g, ' MULTIPLY ');
+            processed = processed.replace(/गुना/g, ' MULTIPLY ');
+            processed = processed.replace(/ضرب/g, ' MULTIPLY ');
+            processed = processed.replace(/گنا/g, ' MULTIPLY ');
+            processed = processed.replace(/\btimes\b/gi, ' MULTIPLY ');
+            processed = processed.replace(/\bmultiply\b/gi, ' MULTIPLY ');
+            processed = processed.replace(/\binto\b/gi, ' MULTIPLY ');
+            processed = processed.replace(/\bmultiplied by\b/gi, ' MULTIPLY ');
+            
+            // DIVIDE - All languages
+            processed = processed.replace(/భాగహారం/g, ' DIVIDE ');
+            processed = processed.replace(/భాగించు/g, ' DIVIDE ');
+            processed = processed.replace(/భాగించండి/g, ' DIVIDE ');
+            processed = processed.replace(/भाग/g, ' DIVIDE ');
+            processed = processed.replace(/बटा/g, ' DIVIDE ');
+            processed = processed.replace(/बांटो/g, ' DIVIDE ');
+            processed = processed.replace(/تقسیم/g, ' DIVIDE ');
+            processed = processed.replace(/بٹا/g, ' DIVIDE ');
+            processed = processed.replace(/\bdivided by\b/gi, ' DIVIDE ');
+            processed = processed.replace(/\bdivide\b/gi, ' DIVIDE ');
+            processed = processed.replace(/\bover\b/gi, ' DIVIDE ');
+            
+            console.log('After operator conversion:', processed);
+            
+            // ========== STEP 2: CONVERT ALL SPOKEN NUMBERS TO DIGITS ==========
+            
+            // Telugu numbers - MOST IMPORTANT - convert Telugu words to numbers
+            processed = processed.replace(/పందొమ్మిది/g, '19');
+            processed = processed.replace(/పద్దెనిమిది/g, '18');
+            processed = processed.replace(/పదిహేడు/g, '17');
+            processed = processed.replace(/పదహారు/g, '16');
+            processed = processed.replace(/పదిహేను/g, '15');
+            processed = processed.replace(/పద్నాలుగు/g, '14');
+            processed = processed.replace(/పదమూడు/g, '13');
+            processed = processed.replace(/పన్నెండు/g, '12');
+            processed = processed.replace(/పదకొండు/g, '11');
+            processed = processed.replace(/తొంభై/g, '90');
+            processed = processed.replace(/ఎనభై/g, '80');
+            processed = processed.replace(/డెబ్బై/g, '70');
+            processed = processed.replace(/అరవై/g, '60');
+            processed = processed.replace(/యాభై/g, '50');
+            processed = processed.replace(/నలభై/g, '40');
+            processed = processed.replace(/ముప్పై/g, '30');
+            processed = processed.replace(/ఇరవై/g, '20');
+            processed = processed.replace(/తొమ్మిది/g, '9');
+            processed = processed.replace(/ఎనిమిది/g, '8');
+            processed = processed.replace(/ఏడు/g, '7');
+            processed = processed.replace(/యేడు/g, '7');
+            processed = processed.replace(/ఆరు/g, '6');
+            processed = processed.replace(/ఐదు/g, '5');
+            processed = processed.replace(/నాలుగు/g, '4');
+            processed = processed.replace(/మూడు/g, '3');
+            processed = processed.replace(/రెండు/g, '2');
+            processed = processed.replace(/ఒకటి/g, '1');
+            processed = processed.replace(/సున్న/g, '0');
+            processed = processed.replace(/పది/g, '10');
+            processed = processed.replace(/వంద/g, '100');
+            processed = processed.replace(/వెయ్యి/g, '1000');
+            processed = processed.replace(/లక్ష/g, '100000');
+            
+            // Hindi numbers
+            processed = processed.replace(/उन्नीस/g, '19');
+            processed = processed.replace(/अठारह/g, '18');
+            processed = processed.replace(/सत्रह/g, '17');
+            processed = processed.replace(/सोलह/g, '16');
+            processed = processed.replace(/पंद्रह/g, '15');
+            processed = processed.replace(/पन्द्रह/g, '15');
+            processed = processed.replace(/चौदह/g, '14');
+            processed = processed.replace(/तेरह/g, '13');
+            processed = processed.replace(/बारह/g, '12');
+            processed = processed.replace(/ग्यारह/g, '11');
+            processed = processed.replace(/नब्बे/g, '90');
+            processed = processed.replace(/अस्सी/g, '80');
+            processed = processed.replace(/सत्तर/g, '70');
+            processed = processed.replace(/साठ/g, '60');
+            processed = processed.replace(/पचास/g, '50');
+            processed = processed.replace(/चालीस/g, '40');
+            processed = processed.replace(/तीस/g, '30');
+            processed = processed.replace(/बीस/g, '20');
+            processed = processed.replace(/नौ/g, '9');
+            processed = processed.replace(/आठ/g, '8');
+            processed = processed.replace(/सात/g, '7');
+            processed = processed.replace(/छह/g, '6');
+            processed = processed.replace(/छे/g, '6');
+            processed = processed.replace(/पांच/g, '5');
+            processed = processed.replace(/पाँच/g, '5');
+            processed = processed.replace(/चार/g, '4');
+            processed = processed.replace(/तीन/g, '3');
+            processed = processed.replace(/दो/g, '2');
+            processed = processed.replace(/एक/g, '1');
+            processed = processed.replace(/शून्य/g, '0');
+            processed = processed.replace(/दस/g, '10');
+            processed = processed.replace(/सौ/g, '100');
+            processed = processed.replace(/हजार/g, '1000');
+            processed = processed.replace(/हज़ार/g, '1000');
+            processed = processed.replace(/लाख/g, '100000');
+            
+            // Urdu numbers
+            processed = processed.replace(/انیس/g, '19');
+            processed = processed.replace(/اٹھارہ/g, '18');
+            processed = processed.replace(/سترہ/g, '17');
+            processed = processed.replace(/سولہ/g, '16');
+            processed = processed.replace(/پندرہ/g, '15');
+            processed = processed.replace(/چودہ/g, '14');
+            processed = processed.replace(/تیرہ/g, '13');
+            processed = processed.replace(/بارہ/g, '12');
+            processed = processed.replace(/گیارہ/g, '11');
+            processed = processed.replace(/بیس/g, '20');
+            processed = processed.replace(/سو/g, '100');
+            processed = processed.replace(/ہزار/g, '1000');
+            processed = processed.replace(/لاکھ/g, '100000');
+            processed = processed.replace(/نو/g, '9');
+            processed = processed.replace(/آٹھ/g, '8');
+            processed = processed.replace(/سات/g, '7');
+            processed = processed.replace(/چھ/g, '6');
+            processed = processed.replace(/پانچ/g, '5');
+            processed = processed.replace(/چار/g, '4');
+            processed = processed.replace(/تین/g, '3');
+            processed = processed.replace(/دو/g, '2');
+            processed = processed.replace(/ایک/g, '1');
+            processed = processed.replace(/صفر/g, '0');
+            processed = processed.replace(/دس/g, '10');
+            
+            // English numbers
+            processed = processed.replace(/\bnineteen\b/gi, '19');
+            processed = processed.replace(/\beighteen\b/gi, '18');
+            processed = processed.replace(/\bseventeen\b/gi, '17');
+            processed = processed.replace(/\bsixteen\b/gi, '16');
+            processed = processed.replace(/\bfifteen\b/gi, '15');
+            processed = processed.replace(/\bfourteen\b/gi, '14');
+            processed = processed.replace(/\bthirteen\b/gi, '13');
+            processed = processed.replace(/\btwelve\b/gi, '12');
+            processed = processed.replace(/\beleven\b/gi, '11');
+            processed = processed.replace(/\bninety\b/gi, '90');
+            processed = processed.replace(/\beighty\b/gi, '80');
+            processed = processed.replace(/\bseventy\b/gi, '70');
+            processed = processed.replace(/\bsixty\b/gi, '60');
+            processed = processed.replace(/\bfifty\b/gi, '50');
+            processed = processed.replace(/\bforty\b/gi, '40');
+            processed = processed.replace(/\bthirty\b/gi, '30');
+            processed = processed.replace(/\btwenty\b/gi, '20');
+            processed = processed.replace(/\bnine\b/gi, '9');
+            processed = processed.replace(/\beight\b/gi, '8');
+            processed = processed.replace(/\bseven\b/gi, '7');
+            processed = processed.replace(/\bsix\b/gi, '6');
+            processed = processed.replace(/\bfive\b/gi, '5');
+            processed = processed.replace(/\bfour\b/gi, '4');
+            processed = processed.replace(/\bthree\b/gi, '3');
+            processed = processed.replace(/\btwo\b/gi, '2');
+            processed = processed.replace(/\bone\b/gi, '1');
+            processed = processed.replace(/\bzero\b/gi, '0');
+            processed = processed.replace(/\bten\b/gi, '10');
+            processed = processed.replace(/\bhundred\b/gi, '100');
+            processed = processed.replace(/\bthousand\b/gi, '1000');
+            
+            console.log('After number conversion:', processed);
+            
+            // ========== STEP 3: Convert operator placeholders to symbols ==========
+            processed = processed.replace(/MINUS/g, '-');
+            processed = processed.replace(/PLUS/g, '+');
+            processed = processed.replace(/MULTIPLY/g, '×');
+            processed = processed.replace(/DIVIDE/g, '÷');
+            
+            // Other operators
+            processed = processed.replace(/दशमलव/g, '.');
+            processed = processed.replace(/पॉइंट/g, '.');
+            processed = processed.replace(/పాయింట్/g, '.');
+            processed = processed.replace(/اعشاریہ/g, '.');
+            processed = processed.replace(/\bpoint\b/gi, '.');
+            processed = processed.replace(/\bdecimal\b/gi, '.');
+            processed = processed.replace(/\bdot\b/gi, '.');
+            
+            processed = processed.replace(/प्रतिशत/g, '%');
+            processed = processed.replace(/परसेंट/g, '%');
+            processed = processed.replace(/फीसदी/g, '%');
+            processed = processed.replace(/శాతం/g, '%');
+            processed = processed.replace(/పర్సెంట్/g, '%');
+            processed = processed.replace(/فیصد/g, '%');
+            processed = processed.replace(/\bpercent\b/gi, '%');
+            processed = processed.replace(/\bpercentage\b/gi, '%');
+            
+            processed = processed.replace(/वर्गमूल/g, '√(');
+            processed = processed.replace(/వర్గమూలం/g, '√(');
+            processed = processed.replace(/\bsquare root of\b/gi, '√(');
+            processed = processed.replace(/\bsquare root\b/gi, '√(');
+            processed = processed.replace(/\bsqrt\b/gi, '√(');
+            
+            console.log('After all conversions:', processed);
+            
+            // ========== STEP 4: FINAL CLEANUP - ONLY KEEP MATH CHARACTERS ==========
+            
+            // Remove all spaces first
+            processed = processed.replace(/\s+/g, '');
+            
+            // Now extract ONLY valid math characters (digits, operators, parentheses)
+            let finalResult = '';
+            for (let i = 0; i < processed.length; i++) {
+                const char = processed[i];
+                // Only keep: 0-9, +, -, ×, ÷, %, ^, (, ), π, √, .
+                if (/[0-9+\-×÷%^()π√.]/.test(char)) {
+                    finalResult += char;
+                }
+            }
+            
+            console.log('Final result:', finalResult);
+            
+            if (finalResult.length > 0) {
+                currentInput = finalResult;
+                cursorPosition = currentInput.length;
+                justCalculated = false;
+                updateDisplay();
+                
+                // Calculate IMMEDIATELY - no delay!
+                calculate();
+            }
+        }
+
+        // Toggle voice input
+        function toggleVoice() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+            
+            if (!recognition) {
+                alert('Voice recognition not supported in this browser. Please use Chrome, Edge, or Safari.');
+                return;
+            }
+            
+            if (isListening) {
+                // Stop listening manually
+                try {
+                    recognition.stop();
+                } catch(e) {}
+                isListening = false;
+                voiceBtn.classList.remove('listening');
+                voiceBtn.innerHTML = '🎤 OFF';
+                voiceBtn.style.background = '';
+                voiceStatus.textContent = '⏹️ Stopped';
+                setTimeout(() => { voiceStatus.textContent = ''; }, 1500);
+            } else {
+                // === ALWAYS START 100% FRESH ===
+                
+                // 1. Clear the calculator completely
+                currentInput = '';
+                cursorPosition = 0;
+                previousInput = '';
+                historyDisplay.textContent = '';
+                resultDisplay.textContent = '0';
+                resultDisplay.className = 'text-right text-2xl sm:text-3xl font-bold text-green-400 min-h-[2rem] sm:min-h-[2.5rem] display-text overflow-x-auto scrollbar-hide whitespace-nowrap';
+                resultDisplay.style.textShadow = '0 0 15px #4ade80';
+                boolIndicator.textContent = '';
+                justCalculated = false;
+                updateDisplay();
+                
+                // 2. Destroy old recognition completely
+                if (recognition) {
+                    try { 
+                        recognition.onresult = null;
+                        recognition.onend = null;
+                        recognition.onerror = null;
+                        recognition.stop(); 
+                    } catch(e) {}
+                    recognition = null;
+                }
+                
+                // 3. Create completely new recognition
+                initSpeechRecognition();
+                
+                if (!recognition) {
+                    voiceStatus.textContent = '❌ Not supported';
+                    return;
+                }
+                
+                // 4. Start fresh listening
+                try {
+                    recognition.lang = languages[currentLangIndex].code;
+                    recognition.start();
+                    isListening = true;
+                    voiceBtn.classList.add('listening');
+                    voiceBtn.innerHTML = '🎤 ON';
+                    voiceBtn.style.background = 'linear-gradient(145deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)';
+                    voiceStatus.textContent = '🔴 Listening - ' + languages[currentLangIndex].label;
+                } catch (e) {
+                    console.error('Voice start error:', e);
+                    voiceStatus.textContent = '❌ Error - Try again';
+                    isListening = false;
+                    voiceBtn.classList.remove('listening');
+                    voiceBtn.innerHTML = '🎤 OFF';
+                    voiceBtn.style.background = '';
+                    setTimeout(() => { voiceStatus.textContent = ''; }, 2000);
+                }
+            }
+        }
+
+        // Update Display with cursor
+        function updateDisplay() {
+            if (cursorPosition < 0) cursorPosition = 0;
+            if (cursorPosition > currentInput.length) cursorPosition = currentInput.length;
+            
+            const beforeCursor = currentInput.substring(0, cursorPosition);
+            const afterCursor = currentInput.substring(cursorPosition);
+            
+            if (currentInput === '') {
+                inputDisplay.innerHTML = '<span class="cursor-char">|</span>';
+            } else {
+                inputDisplay.innerHTML = beforeCursor + '<span class="cursor-char">|</span>' + afterCursor;
+            }
+            
+            // Scroll to cursor position
+            scrollToCursor();
+        }
+        
+        // Scroll display to show cursor
+        function scrollToCursor() {
+            requestAnimationFrame(() => {
+                const cursorEl = inputDisplay.querySelector('.cursor-char');
+                if (cursorEl) {
+                    const inputRect = inputDisplay.getBoundingClientRect();
+                    const cursorRect = cursorEl.getBoundingClientRect();
+                    const padding = 40;
+                    
+                    // If cursor is out of view on the right
+                    if (cursorRect.right > inputRect.right - padding) {
+                        const scrollAmount = cursorRect.right - inputRect.right + padding;
+                        inputDisplay.scrollLeft += scrollAmount;
+                    }
+                    // If cursor is out of view on the left
+                    else if (cursorRect.left < inputRect.left + padding) {
+                        const scrollAmount = inputRect.left - cursorRect.left + padding;
+                        inputDisplay.scrollLeft = Math.max(0, inputDisplay.scrollLeft - scrollAmount);
+                    }
+                    
+                    // If cursor is at the beginning, scroll all the way left
+                    if (cursorPosition === 0) {
+                        inputDisplay.scrollLeft = 0;
+                    }
+                    
+                    // If cursor is at the end, scroll all the way right
+                    if (cursorPosition === currentInput.length) {
+                        inputDisplay.scrollLeft = inputDisplay.scrollWidth;
+                    }
+                }
+            });
+        }
+        
+        // Move cursor function
+        function moveCursor(direction) {
+            const prevPosition = cursorPosition;
+            
+            switch(direction) {
+                case 'left':
+                    if (cursorPosition > 0) {
+                        cursorPosition--;
+                    }
+                    break;
+                case 'right':
+                    if (cursorPosition < currentInput.length) {
+                        cursorPosition++;
+                    }
+                    break;
+                case 'up':
+                    // Jump back to previous operator or start
+                    const beforeUp = currentInput.substring(0, cursorPosition);
+                    const ops = ['+', '-', '×', '÷', '(', ' '];
+                    let lastOp = -1;
+                    for (let op of ops) {
+                        const idx = beforeUp.lastIndexOf(op);
+                        if (idx > lastOp && idx < cursorPosition - 1) lastOp = idx;
+                    }
+                    cursorPosition = lastOp >= 0 ? lastOp + 1 : 0;
+                    break;
+                case 'down':
+                    // Jump forward to next operator or end
+                    const afterDown = currentInput.substring(cursorPosition);
+                    const opsDown = ['+', '-', '×', '÷', ')', ' '];
+                    let nextOp = afterDown.length;
+                    for (let op of opsDown) {
+                        const idx = afterDown.indexOf(op);
+                        if (idx !== -1 && idx < nextOp) nextOp = idx;
+                    }
+                    cursorPosition = cursorPosition + nextOp + 1;
+                    if (cursorPosition > currentInput.length) cursorPosition = currentInput.length;
+                    break;
+                case 'start':
+                    cursorPosition = 0;
+                    inputDisplay.scrollLeft = 0; // Immediately scroll to start
+                    break;
+                case 'end':
+                    cursorPosition = currentInput.length;
+                    inputDisplay.scrollLeft = inputDisplay.scrollWidth; // Immediately scroll to end
+                    break;
+            }
+            
+            updateDisplay();
+            
+            // Force scroll update after a short delay to ensure DOM is updated
+            setTimeout(() => {
+                scrollToCursor();
+            }, 10);
+        }
+
+        // Mode Switching
+        function setMode(mode) {
+            currentMode = mode;
+            if (mode === 'scientific') {
+                scientificPanel.classList.remove('hidden');
+                codingPanel.classList.add('hidden');
+                sciModeBtn.classList.add('active');
+                codeModeBtn.classList.remove('active');
+            } else {
+                scientificPanel.classList.add('hidden');
+                codingPanel.classList.remove('hidden');
+                sciModeBtn.classList.remove('active');
+                codeModeBtn.classList.add('active');
+            }
+        }
+
+        // Append to input at cursor position
+        function append(value) {
+            if (justCalculated && /^[0-9.]$/.test(value)) {
+                currentInput = value;
+                cursorPosition = value.length;
+                justCalculated = false;
+            } else if (justCalculated) {
+                justCalculated = false;
+                const before = currentInput.substring(0, cursorPosition);
+                const after = currentInput.substring(cursorPosition);
+                currentInput = before + value + after;
+                cursorPosition += value.length;
+            } else {
+                const before = currentInput.substring(0, cursorPosition);
+                const after = currentInput.substring(cursorPosition);
+                currentInput = before + value + after;
+                cursorPosition += value.length;
+            }
+            updateDisplay();
+            liveCalculate();
+        }
+
+        // Append logic values (true/false)
+        function appendLogic(value) {
+            if (justCalculated || currentInput === '') {
+                currentInput = value;
+                cursorPosition = value.length;
+                justCalculated = false;
+            } else {
+                const before = currentInput.substring(0, cursorPosition);
+                const after = currentInput.substring(cursorPosition);
+                currentInput = before + value + after;
+                cursorPosition += value.length;
+            }
+            updateDisplay();
+            liveCalculate();
+        }
+
+        // Append function with opening parenthesis
+        function appendFunction(func) {
+            if (justCalculated) {
+                currentInput = func;
+                cursorPosition = func.length;
+                justCalculated = false;
+            } else {
+                const before = currentInput.substring(0, cursorPosition);
+                const after = currentInput.substring(cursorPosition);
+                currentInput = before + func + after;
+                cursorPosition += func.length;
+            }
+            updateDisplay();
+        }
+
+        // Clear all
+        function clearAll() {
+            currentInput = '';
+            cursorPosition = 0;
+            previousInput = '';
+            historyDisplay.textContent = '';
+            resultDisplay.textContent = '0';
+            resultDisplay.className = 'text-right text-2xl sm:text-3xl font-bold text-green-400 min-h-[2rem] sm:min-h-[2.5rem] display-text overflow-x-auto scrollbar-hide whitespace-nowrap';
+            resultDisplay.style.textShadow = '0 0 15px #4ade80';
+            boolIndicator.textContent = '';
+            boolIndicator.className = 'text-xs display-text font-bold';
+            justCalculated = false;
+            lastResultWasBoolean = false;
+            updateDisplay();
+        }
+
+        // Backspace at cursor position
+        function backspace() {
+            if (cursorPosition > 0 && currentInput.length > 0) {
+                const beforeCursor = currentInput.substring(0, cursorPosition);
+                const afterCursor = currentInput.substring(cursorPosition);
+                
+                const functions = ['sin(', 'cos(', 'tan(', 'log(', 'ln(', '√(', 'fact(', 'true', 'false'];
+                let removeLen = 1;
+                
+                for (let func of functions) {
+                    if (beforeCursor.endsWith(func)) {
+                        removeLen = func.length;
+                        break;
+                    }
+                }
+                
+                const multiOps = [' XOR ', '<<', '>>', '**', '//', '==', '!=', '>=', '<=', '&&', '||'];
+                for (let op of multiOps) {
+                    if (beforeCursor.endsWith(op)) {
+                        removeLen = op.length;
+                        break;
+                    }
+                }
+                
+                currentInput = beforeCursor.slice(0, -removeLen) + afterCursor;
+                cursorPosition -= removeLen;
+                
+                if (cursorPosition < 0) cursorPosition = 0;
+            }
+            
+            updateDisplay();
+            liveCalculate();
+        }
+        
+        // Delete character after cursor
+        function deleteForward() {
+            if (cursorPosition < currentInput.length) {
+                const beforeCursor = currentInput.substring(0, cursorPosition);
+                const afterCursor = currentInput.substring(cursorPosition);
+                
+                const functions = ['sin(', 'cos(', 'tan(', 'log(', 'ln(', '√(', 'fact(', 'true', 'false'];
+                let removeLen = 1;
+                
+                for (let func of functions) {
+                    if (afterCursor.startsWith(func)) {
+                        removeLen = func.length;
+                        break;
+                    }
+                }
+                
+                const multiOps = [' XOR ', '<<', '>>', '**', '//', '==', '!=', '>=', '<=', '&&', '||'];
+                for (let op of multiOps) {
+                    if (afterCursor.startsWith(op)) {
+                        removeLen = op.length;
+                        break;
+                    }
+                }
+                
+                currentInput = beforeCursor + afterCursor.slice(removeLen);
+            }
+            
+            updateDisplay();
+            liveCalculate();
+        }
+
+        // Toggle sign
+        function toggleSign() {
+            if (currentInput !== '' && currentInput !== '0') {
+                if (currentInput.startsWith('(-') && currentInput.endsWith(')')) {
+                    currentInput = currentInput.slice(2, -1);
+                } else if (currentInput.startsWith('-')) {
+                    currentInput = currentInput.slice(1);
+                } else {
+                    currentInput = '(-' + currentInput + ')';
+                }
+                cursorPosition = currentInput.length;
+                updateDisplay();
+                liveCalculate();
+            }
+        }
+
+        // Factorial function
+        function factorialCalc(n) {
+            if (n < 0) return NaN;
+            if (n === 0 || n === 1) return 1;
+            if (!Number.isInteger(n)) return gamma(n + 1);
+            let result = 1;
+            for (let i = 2; i <= n; i++) {
+                result *= i;
+            }
+            return result;
+        }
+
+        // Gamma function approximation
+        function gamma(z) {
+            if (z < 0.5) {
+                return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+            }
+            z -= 1;
+            const g = 7;
+            const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+            let x = c[0];
+            for (let i = 1; i < g + 2; i++) {
+                x += c[i] / (z + i);
+            }
+            const t = z + g + 0.5;
+            return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+        }
+
+        // Bitwise NOT
+        function bitwiseNot() {
+            try {
+                let expr = prepareExpression(currentInput);
+                if (expr === '') expr = '0';
+                let num = Math.floor(safeEval(expr));
+                if (!isNaN(num)) {
+                    let result = ~num;
+                    previousInput = '~(' + (currentInput || '0') + ')';
+                    historyDisplay.textContent = previousInput + ' =';
+                    currentInput = result.toString();
+                    cursorPosition = currentInput.length;
+                    resultDisplay.textContent = formatNumber(result);
+                    resultDisplay.classList.add('result-animate');
+                    setTimeout(() => resultDisplay.classList.remove('result-animate'), 300);
+                    justCalculated = true;
+                    updateDisplay();
+                }
+            } catch (e) {}
+        }
+
+        // Memory functions
+        function memoryAdd() {
+            try {
+                let expr = prepareExpression(currentInput);
+                if (expr === '') return;
+                let result = safeEval(expr);
+                if (!isNaN(result) && typeof result === 'number') {
+                    memory += result;
+                    updateMemoryIndicator();
+                }
+            } catch (e) {}
+        }
+
+        function memorySub() {
+            try {
+                let expr = prepareExpression(currentInput);
+                if (expr === '') return;
+                let result = safeEval(expr);
+                if (!isNaN(result) && typeof result === 'number') {
+                    memory -= result;
+                    updateMemoryIndicator();
+                }
+            } catch (e) {}
+        }
+
+        function memoryRecall() {
+            if (currentInput === '' || justCalculated) {
+                currentInput = memory.toString();
+            } else {
+                const before = currentInput.substring(0, cursorPosition);
+                const after = currentInput.substring(cursorPosition);
+                currentInput = before + memory.toString() + after;
+            }
+            cursorPosition = currentInput.length;
+            justCalculated = false;
+            updateDisplay();
+            liveCalculate();
+        }
+
+        function memoryClear() {
+            memory = 0;
+            updateMemoryIndicator();
+        }
+
+        function updateMemoryIndicator() {
+            if (memory !== 0) {
+                memoryIndicator.textContent = 'M = ' + formatNumber(memory);
+            } else {
+                memoryIndicator.textContent = '';
+            }
+        }
+
+        // Prepare expression for evaluation
+        function prepareExpression(expr) {
+            if (expr === '') return '';
+            
+            // Replace display characters with actual operators
+            expr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+            
+            // Replace π with Math.PI
+            expr = expr.replace(/π/g, 'Math.PI');
+            
+            // Handle XOR (bitwise)
+            expr = expr.replace(/ XOR /g, '^');
+            
+            // Replace scientific functions
+            expr = expr.replace(/sin\(/g, 'Math.sin(');
+            expr = expr.replace(/cos\(/g, 'Math.cos(');
+            expr = expr.replace(/tan\(/g, 'Math.tan(');
+            expr = expr.replace(/log\(/g, 'Math.log10(');
+            expr = expr.replace(/ln\(/g, 'Math.log(');
+            expr = expr.replace(/√\(/g, 'Math.sqrt(');
+            expr = expr.replace(/fact\(/g, 'factorialCalc(');
+            
+            // Handle floor division BEFORE other replacements
+            expr = expr.replace(/\/\//g, '~FLOORDIV~');
+            
+            // Replace ^ with ** for power (after XOR)
+            expr = expr.replace(/\^/g, '**');
+            
+            // Process floor division
+            expr = expr.replace(/~FLOORDIV~/g, '//');
+            if (expr.includes('//')) {
+                expr = processFloorDiv(expr);
+            }
+            
+            return expr;
+        }
+
+        function processFloorDiv(expr) {
+            const regex = /(\d+(?:\.\d+)?)\s*\/\/\s*(\d+(?:\.\d+)?)/g;
+            return expr.replace(regex, 'Math.floor($1/$2)');
+        }
+
+        // Safe evaluation function
+        function safeEval(expr) {
+            try {
+                if (expr === '') return 0;
+                
+                // Auto-close parentheses
+                let openCount = (expr.match(/\(/g) || []).length;
+                let closeCount = (expr.match(/\)/g) || []).length;
+                expr += ')'.repeat(Math.max(0, openCount - closeCount));
+                
+                const func = new Function('Math', 'factorialCalc', 'return ' + expr);
+                return func(Math, factorialCalc);
+            } catch (e) {
+                return NaN;
+            }
+        }
+
+        // Check if result is boolean type
+        function isBooleanExpression(expr) {
+            const boolOps = ['==', '!=', '>=', '<=', '>', '<', '&&', '||'];
+            const hasBoolOp = boolOps.some(op => expr.includes(op));
+            const hasTrueFalse = expr.includes('true') || expr.includes('false');
+            return hasBoolOp || hasTrueFalse;
+        }
+
+        // Format number for display
+        function formatNumber(num) {
+            if (typeof num === 'boolean') {
+                return num ? 'TRUE ✓' : 'FALSE ✗';
+            }
+            if (!isFinite(num)) {
+                return num > 0 ? '∞' : '-∞';
+            }
+            if (Number.isNaN(num)) {
+                return 'Error';
+            }
+            if (Math.abs(num) > 1e12 || (Math.abs(num) < 1e-10 && num !== 0)) {
+                return num.toExponential(6);
+            }
+            let rounded = Math.round(num * 1e12) / 1e12;
+            
+            if (Number.isInteger(rounded)) {
+                return rounded.toLocaleString('en-US');
+            }
+            return rounded.toLocaleString('en-US', { maximumFractionDigits: 10 });
+        }
+
+        // Update boolean indicator
+        function updateBoolIndicator(result) {
+            if (typeof result === 'boolean') {
+                lastResultWasBoolean = true;
+                if (result) {
+                    boolIndicator.textContent = '● Boolean: TRUE';
+                    boolIndicator.className = 'text-xs display-text font-bold bool-true';
+                    resultDisplay.className = 'text-right text-2xl sm:text-3xl font-bold min-h-[2rem] sm:min-h-[2.5rem] display-text overflow-x-auto scrollbar-hide whitespace-nowrap bool-true';
+                } else {
+                    boolIndicator.textContent = '● Boolean: FALSE';
+                    boolIndicator.className = 'text-xs display-text font-bold bool-false';
+                    resultDisplay.className = 'text-right text-2xl sm:text-3xl font-bold min-h-[2rem] sm:min-h-[2.5rem] display-text overflow-x-auto scrollbar-hide whitespace-nowrap bool-false';
+                }
+            } else {
+                lastResultWasBoolean = false;
+                boolIndicator.textContent = '';
+                boolIndicator.className = 'text-xs display-text font-bold';
+                resultDisplay.className = 'text-right text-2xl sm:text-3xl font-bold text-green-400 min-h-[2rem] sm:min-h-[2.5rem] display-text overflow-x-auto scrollbar-hide whitespace-nowrap';
+                resultDisplay.style.textShadow = '0 0 15px #4ade80';
+            }
+        }
+
+        // Live calculation - INSTANT RESULTS!
+        function liveCalculate() {
+            if (currentInput === '') {
+                resultDisplay.textContent = '0';
+                return;
+            }
+            
+            try {
+                let expr = prepareExpression(currentInput);
+                let result = safeEval(expr);
+                
+                if (result !== undefined && !Number.isNaN(result)) {
+                    resultDisplay.textContent = formatNumber(result);
+                    updateBoolIndicator(result);
+                    
+                    // Add animation for voice input results
+                    resultDisplay.classList.add('result-animate');
+                    setTimeout(() => resultDisplay.classList.remove('result-animate'), 300);
+                }
+            } catch (e) {
+                // Try auto-fix for incomplete expressions
+                let fixed = tryAutoFix(currentInput);
+                if (fixed) {
+                    try {
+                        let expr = prepareExpression(fixed);
+                        let result = safeEval(expr);
+                        if (result !== undefined && !Number.isNaN(result)) {
+                            resultDisplay.textContent = formatNumber(result);
+                            updateBoolIndicator(result);
+                        }
+                    } catch (e2) {}
+                }
+            }
+        }
+
+        // Calculate result
+        function calculate() {
+            if (currentInput === '') {
+                resultDisplay.textContent = '0';
+                return;
+            }
+            
+            try {
+                let expr = prepareExpression(currentInput);
+                let result = safeEval(expr);
+                
+                // Try to fix common issues
+                if ((result === undefined || Number.isNaN(result))) {
+                    let fixedExpr = tryAutoFix(currentInput);
+                    if (fixedExpr) {
+                        expr = prepareExpression(fixedExpr);
+                        result = safeEval(expr);
+                    }
+                }
+                
+                if (result !== undefined && !Number.isNaN(result)) {
+                    // Add to history
+                    addToHistory(currentInput, formatNumber(result));
+                    
+                    previousInput = currentInput;
+                    historyDisplay.textContent = currentInput + ' =';
+                    historyDisplay.classList.add('fade-in');
+                    setTimeout(() => historyDisplay.classList.remove('fade-in'), 300);
+                    
+                    if (typeof result === 'boolean') {
+                        currentInput = result ? 'true' : 'false';
+                        resultDisplay.textContent = result ? 'TRUE ✓' : 'FALSE ✗';
+                    } else {
+                        currentInput = result.toString();
+                        resultDisplay.textContent = formatNumber(result);
+                    }
+                    
+                    cursorPosition = currentInput.length;
+                    updateBoolIndicator(result);
+                    resultDisplay.classList.add('result-animate');
+                    setTimeout(() => resultDisplay.classList.remove('result-animate'), 300);
+                    
+                    justCalculated = true;
+                    updateDisplay();
+                }
+            } catch (e) {
+                // Only show error for truly broken expressions
+                if (currentInput.length > 0 && !/^[0-9.]+$/.test(currentInput)) {
+                    resultDisplay.textContent = 'Error';
+                    resultDisplay.className = 'text-right text-2xl sm:text-3xl font-bold text-red-400 min-h-[2rem] sm:min-h-[2.5rem] display-text overflow-x-auto scrollbar-hide whitespace-nowrap';
+                }
+            }
+        }
+
+        // Try to auto-fix expression issues
+        function tryAutoFix(input) {
+            let fixed = input;
+            
+            // Auto-close parentheses
+            let openCount = (fixed.match(/\(/g) || []).length;
+            let closeCount = (fixed.match(/\)/g) || []).length;
+            fixed += ')'.repeat(Math.max(0, openCount - closeCount));
+            
+            // Remove trailing operators
+            fixed = fixed.replace(/[+\-×÷*/%^&|]+$/, '');
+            
+            if (fixed !== input && fixed.length > 0) {
+                return fixed;
+            }
+            return null;
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            const key = e.key;
+            
+            if (/^[0-9]$/.test(key)) {
+                e.preventDefault();
+                append(key);
+            }
+            else if (key === '+') { e.preventDefault(); append('+'); }
+            else if (key === '-') { e.preventDefault(); append('-'); }
+            else if (key === '*') { e.preventDefault(); append('×'); }
+            else if (key === '/') { e.preventDefault(); append('÷'); }
+            else if (key === '%') { e.preventDefault(); append('%'); }
+            else if (key === '^') { e.preventDefault(); append('^'); }
+            else if (key === '&') { e.preventDefault(); append('&'); }
+            else if (key === '|') { e.preventDefault(); append('|'); }
+            else if (key === '<') { e.preventDefault(); append('<'); }
+            else if (key === '>') { e.preventDefault(); append('>'); }
+            else if (key === '=' || key === 'Enter') { e.preventDefault(); calculate(); }
+            else if (key === '.') { e.preventDefault(); append('.'); }
+            else if (key === '(' || key === ')') { e.preventDefault(); append(key); }
+            else if (key === 'Backspace') { e.preventDefault(); backspace(); }
+            else if (key === 'Delete') { e.preventDefault(); deleteForward(); }
+            else if (key === 'Escape') { e.preventDefault(); clearAll(); }
+            else if (key === 'ArrowLeft') { e.preventDefault(); moveCursor('left'); }
+            else if (key === 'ArrowRight') { e.preventDefault(); moveCursor('right'); }
+            else if (key === 'ArrowUp') { e.preventDefault(); moveCursor('up'); }
+            else if (key === 'ArrowDown') { e.preventDefault(); moveCursor('down'); }
+            else if (key === 'Home') { e.preventDefault(); moveCursor('start'); }
+            else if (key === 'End') { e.preventDefault(); moveCursor('end'); }
+            // Function shortcuts
+            else if (key === 's' && !e.ctrlKey) { e.preventDefault(); appendFunction('sin('); }
+            else if (key === 'c' && !e.ctrlKey) { e.preventDefault(); appendFunction('cos('); }
+            else if (key === 't' && !e.ctrlKey) { e.preventDefault(); appendFunction('tan('); }
+            else if (key === 'l' && !e.ctrlKey) { e.preventDefault(); appendFunction('log('); }
+            else if (key === 'n' && !e.ctrlKey) { e.preventDefault(); appendFunction('ln('); }
+            else if (key === 'r' && !e.ctrlKey) { e.preventDefault(); appendFunction('√('); }
+            else if (key === '!') { e.preventDefault(); appendFunction('fact('); }
+            else if (key === 'p' && !e.ctrlKey) { e.preventDefault(); append('π'); }
+        });
+
+        // Touch and click feedback
+        document.querySelectorAll('.calc-btn').forEach(btn => {
+            const addAnimation = () => btn.classList.add('pressed');
+            const removeAnimation = () => btn.classList.remove('pressed');
+            
+            btn.addEventListener('touchstart', addAnimation);
+            btn.addEventListener('touchend', removeAnimation);
+            btn.addEventListener('mousedown', addAnimation);
+            btn.addEventListener('mouseup', removeAnimation);
+            btn.addEventListener('mouseleave', removeAnimation);
+        });
+
+        // 3D tilt effect
+        const calcBody = document.querySelector('.calc-body');
+        document.querySelector('.calc-container').addEventListener('mousemove', (e) => {
+            if (window.innerWidth < 768) return;
+            
+            const rect = calcBody.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = (y - centerY) / centerY * -3;
+            const rotateY = (x - centerX) / centerX * 3;
+            
+            calcBody.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        document.querySelector('.calc-container').addEventListener('mouseleave', () => {
+            calcBody.style.transform = 'rotateX(5deg) rotateY(0deg)';
+        });
+
+        // History functions
+        function toggleHistory() {
+            const panel = document.getElementById('historyPanel');
+            const btn = document.getElementById('historyBtn');
+            showingHistory = !showingHistory;
+            
+            if (showingHistory) {
+                panel.classList.remove('hidden');
+                btn.classList.add('active');
+                renderHistory();
+            } else {
+                panel.classList.add('hidden');
+                btn.classList.remove('active');
+            }
+        }
+        
+        function addToHistory(expression, result) {
+            if (expression && result !== undefined) {
+                const entry = {
+                    expression: expression,
+                    result: result,
+                    time: new Date().toLocaleTimeString()
+                };
+                calculationHistory.unshift(entry); // Add to beginning
+                if (calculationHistory.length > 50) {
+                    calculationHistory.pop(); // Keep max 50 entries
+                }
+                renderHistory();
+            }
+        }
+        
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            const noHistory = document.getElementById('noHistory');
+            
+            if (calculationHistory.length === 0) {
+                list.innerHTML = '';
+                noHistory.classList.remove('hidden');
+                return;
+            }
+            
+            noHistory.classList.add('hidden');
+            list.innerHTML = calculationHistory.map((entry, index) => `
+                <div class="history-item" onclick="useHistoryItem(${index})">
+                    <div class="flex justify-between">
+                        <span class="text-cyan-400">${entry.expression}</span>
+                        <span class="text-slate-500 text-[10px]">${entry.time}</span>
+                    </div>
+                    <div class="text-green-400 font-bold">= ${entry.result}</div>
+                </div>
+            `).join('');
+        }
+        
+        function useHistoryItem(index) {
+            const entry = calculationHistory[index];
+            if (entry) {
+                currentInput = entry.expression;
+                cursorPosition = currentInput.length;
+                updateDisplay();
+                liveCalculate();
+            }
+        }
+        
+        function clearHistory() {
+            calculationHistory = [];
+            renderHistory();
+        }
+
+        // Initialize
+        initSpeechRecognition();
+        updateDisplay();
+        // Start with Telugu (first language in array)
+        langIndicator.textContent = languages[0].flag + ' ' + languages[0].name;
+        langIndicator.title = languages[0].label;
+    </script>
+</body>
+</html>
